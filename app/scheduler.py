@@ -12,8 +12,17 @@ def job_once():
         with retry(settings.SCRAPER_MAX_RETRIES, on_error_delay=10):
             html = fetch_product_html(url)
             t, price_cents, curr = extract_title_and_price(html)
-            if t and curr:
-                update_product_title_currency(pid, t, curr)
+
+            # Update title/currency if we saw them
+            if t:
+                update_product_title_currency(pid, t, curr or currency or "$")
+
+            # If we still couldn't find a price, just skip gracefully
+            if price_cents is None:
+                # No exception — continue with next product
+                human_delay(settings.SCRAPER_MIN_SLEEP_SEC, settings.SCRAPER_MAX_SLEEP_SEC)
+                continue
+
             insert_price(pid, price_cents, curr or currency or "$")
             maybe_alert((pid, url, asin, t or title, curr or currency or "$", threshold_pct),
                         latest_price_cents=price_cents,
