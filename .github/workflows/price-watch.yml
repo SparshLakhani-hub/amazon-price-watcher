@@ -48,7 +48,9 @@ jobs:
       - name: Initialize DB (safe if exists)
         run: |
           python -c "from app.db import init_db; init_db()"
-
+      - name: Ensure at least 1 product (idempotent)
+        run: |
+          python add_product.py "https://www.amazon.com/dp/B0BDHWDR12" 10
       - name: Run one scrape + alert cycle
         run: |
           python run_once.py
